@@ -3,8 +3,12 @@ import _map from 'lodash/map';
 import _isEqual from 'lodash/isEqual';
 import _sortBy from 'lodash/sortBy';
 
+function isArray(data) {
+  return data instanceof Array;
+}
+
 function duplicate(data) {
-  if (Array.isArray(data)) {
+  if (isArray(data)) {
     return data.map(duplicate);
   } else {
     return _assign({}, data);
@@ -21,11 +25,11 @@ function isNumber(n) {
  *  @constructor
  *  @public
  */
-class DbCollection {
-
+class DbCollection extends Array {
   constructor(name, initialData) {
+    super();
+
     this.name = name;
-    this._records = [];
     this.identityManager = new IdentityManager();
 
     if (initialData) {
@@ -39,7 +43,7 @@ class DbCollection {
    * @public
    */
   all() {
-    return duplicate(this._records);
+    return duplicate(this);
   }
 
   /**
@@ -50,7 +54,7 @@ class DbCollection {
    * @public
    */
   insert(data) {
-    if (!Array.isArray(data)) {
+    if (!isArray(data)) {
       return this._insertRecord(data);
     } else {
       // Need to sort in order to ensure IDs inserted in the correct order
@@ -69,7 +73,7 @@ class DbCollection {
    * @public
    */
   find(ids) {
-    if (Array.isArray(ids)) {
+    if (isArray(ids)) {
       let records = this._findRecords(ids)
         .filter(Boolean)
         .map(duplicate); // Return a copy
@@ -161,7 +165,7 @@ class DbCollection {
       attrs = target;
       let changedRecords = [];
 
-      this._records.forEach((record) => {
+      this.forEach((record) => {
         let oldRecord = _assign({}, record);
 
         this._updateRecord(record, attrs);
@@ -181,7 +185,7 @@ class DbCollection {
 
       return record;
 
-    } else if (Array.isArray(target)) {
+    } else if (isArray(target)) {
       let ids = target;
       records = this._findRecords(ids);
 
@@ -219,26 +223,26 @@ class DbCollection {
     let records;
 
     if (typeof target === 'undefined') {
-      this._records = [];
+      this.splice(0, this.length);
       this.identityManager.reset();
 
     } else if (typeof target === 'number' || typeof target === 'string') {
       let record = this._findRecord(target);
-      let index = this._records.indexOf(record);
-      this._records.splice(index, 1);
+      let index = this.indexOf(record);
+      this.splice(index, 1);
 
-    } else if (Array.isArray(target)) {
+    } else if (isArray(target)) {
       records = this._findRecords(target);
       records.forEach((record) =>  {
-        let index = this._records.indexOf(record);
-        this._records.splice(index, 1);
+        let index = this.indexOf(record);
+        this.splice(index, 1);
       });
 
     } else if (typeof target === 'object') {
       records = this._findRecordsWhere(target);
       records.forEach((record) =>  {
-        let index = this._records.indexOf(record);
-        this._records.splice(index, 1);
+        let index = this.indexOf(record);
+        this.splice(index, 1);
       });
     }
   }
@@ -258,7 +262,7 @@ class DbCollection {
   _findRecord(id) {
     id = id.toString();
 
-    let [record] = this._records.filter((obj) => obj.id === id);
+    let [record] = this.filter((obj) => obj.id === id);
 
     return record;
   }
@@ -287,8 +291,6 @@ class DbCollection {
    * @private
    */
   _findRecordsWhere(query) {
-    let records = this._records;
-
     function defaultQueryFunction(record) {
       let keys = Object.keys(query);
 
@@ -299,7 +301,7 @@ class DbCollection {
 
     let queryFunction = typeof query === 'object' ? defaultQueryFunction : query;
 
-    return records.filter(queryFunction);
+    return this.filter(queryFunction);
   }
 
   /**
@@ -318,7 +320,7 @@ class DbCollection {
       this.identityManager.set(attrs.id);
     }
 
-    this._records.push(attrs);
+    this.push(attrs);
 
     return duplicate(attrs);
   }
