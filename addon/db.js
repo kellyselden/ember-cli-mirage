@@ -1,4 +1,7 @@
 import DbCollection from './db-collection';
+import { deprecateFunc } from 'ember-deprecations';
+
+const methodsToDeprecate = ['insert', 'find', 'findBy', 'where', 'update', 'remove', 'firstOrCreate'];
 
 /**
  * The db, an identity map.
@@ -49,20 +52,27 @@ class Db {
     if (!this[name]) {
       let newCollection = new DbCollection(name, initialData);
 
-      Object.defineProperty(this, name, {
-        get() {
-          let recordsCopy = newCollection.all();
+      let { all } = newCollection;
+      newCollection.all = function() {
+        let array = all.apply(newCollection, arguments);
 
-          ['insert', 'find', 'findBy', 'where', 'update', 'remove', 'firstOrCreate']
-            .forEach(function(method) {
-              recordsCopy[method] = function() {
-                return newCollection[method](...arguments);
-              };
-            });
+        methodsToDeprecate.forEach(method => {
+          let func = function() {
+            return newCollection[method](...arguments);
+          };
 
-          return recordsCopy;
-        }
-      });
+          func = deprecateFunc(`db.${name}.all().${method}() and schema.${name}.all().${method}() are deprecated, please use db.${name}.${method}() or schema.${name}.${method}()`, {
+            id: 'ember-cli-mirage.all-array',
+            until: '0.4.0'
+          }, func);
+
+          array[method] = func;
+        });
+
+        return array;
+      };
+
+      this[name] = newCollection;
 
       this._collections.push(newCollection);
 
