@@ -49,20 +49,7 @@ class Db {
     if (!this[name]) {
       let newCollection = new DbCollection(name, initialData);
 
-      Object.defineProperty(this, name, {
-        get() {
-          let recordsCopy = newCollection.all();
-
-          ['insert', 'find', 'findBy', 'where', 'update', 'remove', 'firstOrCreate']
-            .forEach(function(method) {
-              recordsCopy[method] = function() {
-                return newCollection[method](...arguments);
-              };
-            });
-
-          return recordsCopy;
-        }
-      });
+      this[name] = newCollection;
 
       this._collections.push(newCollection);
 
