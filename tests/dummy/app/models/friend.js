@@ -1,8 +1,9 @@
-import DS from 'ember-data';
+import attr from 'ember-data/attr';
+import { hasMany } from 'ember-data/relationships';
 import Contact from './contact';
 
-const { attr } = DS;
-
 export default Contact.extend({
-  isYoung: attr('boolean')
+  isYoung: attr('boolean'),
+
+  otherFriends: hasMany()
 });

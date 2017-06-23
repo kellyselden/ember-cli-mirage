@@ -1,7 +1,11 @@
 import {test} from 'qunit';
 import moduleForAcceptance from '../helpers/module-for-acceptance';
 
-moduleForAcceptance('Acceptance | Friends');
+moduleForAcceptance('Acceptance | Friends', {
+  beforeEach() {
+    this.store = this.application.__container__.lookup('service:store');
+  }
+});
 
 test('I can view the friends', function(assert) {
   let friend = server.create('friend');
@@ -46,7 +50,22 @@ test('I can view a friend that was configured only for test mode', function(asse
   visit(`/friends/${friend.id}`);
 
   andThen(function() {
-    assert.equal(currentRouteName(), 'friend');
+    assert.equal(currentRouteName(), 'friend.index');
     assert.ok(find('h2.friend-name').text().match('The Dude'));
+  });
+});
+
+test('I can use links serializer', function(assert) {
+  server.logging = true;
+
+  let friend = server.create('friend');
+  server.createList('other-friend', 3, { friend });
+
+  visit(`/friends/${friend.id}/other-friends`);
+
+  andThen(() => {
+    let otherFriendsInStore = this.store.peekAll('other-friend');
+
+    assert.equal(otherFriendsInStore.get('length'), 3);
   });
 });

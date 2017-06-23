@@ -12,7 +12,9 @@ Router.map(function() {
   this.route('edit', { path: '/:contact_id/edit' });
 
   this.route('friends');
-  this.route('friend', { path: '/friends/:friend_id' });
+  this.route('friend', { path: '/friends/:friend_id' }, function() {
+    this.route('other-friends');
+  });
   this.route('close-friends');
   this.route('pets');
 
